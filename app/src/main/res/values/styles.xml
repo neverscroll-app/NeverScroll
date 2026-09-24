@@ -1,0 +1,9 @@
+<resources>
+    <style name="Theme.NeverScroll" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:colorAccent">#325A46</item>
+        <item name="android:statusBarColor">#F6F4EE</item>
+        <item name="android:navigationBarColor">#F6F4EE</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>

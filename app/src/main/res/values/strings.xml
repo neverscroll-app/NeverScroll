@@ -1,0 +1,38 @@
+<resources>
+    <string name="app_name" translatable="false">NeverScroll</string>
+    <string name="brand" translatable="false">NEVERSCROLL</string>
+    <string name="service_label">NeverScroll — Feed protection</string>
+    <string name="accessibility_description">Stops swipes in YouTube Shorts, YouTube ReVanced, Instagram Reels, and TikTok. Reads the visible interface of these apps only on your device and places a transparent layer over short-video feeds to block swipes. You can optionally protect every screen in a selected app.</string>
+
+    <string name="hero_title">Watch one video.\nThen get on with your day.</string>
+    <string name="hero_description">Open a Short, Reel, or TikTok someone sent you. When you try to scroll to the next video, NeverScroll stops the swipe.</string>
+    <string name="protection_section">Protection</string>
+    <string name="access_checking">Checking access…</string>
+    <string name="access_settings">Android accessibility settings</string>
+    <string name="protection_enabled">Protection enabled</string>
+    <string name="protection_description">Block swipes in selected apps</string>
+    <string name="feeds_section">Where to stop the feed</string>
+    <string name="shorts_screen">Shorts viewer</string>
+    <string name="shorts_link_screen">Shorts opened from a link</string>
+    <string name="reels_screen">Reels viewer</string>
+    <string name="for_you_feed">For You feed</string>
+    <string name="compatibility_section">If a video is not detected</string>
+    <string name="compatibility_explanation">Compatibility mode blocks swipes on every screen of the selected app, including its regular feed and messages. Use it only when video detection does not work.</string>
+    <string name="compatibility_toggle_description">Block all swipes in this app</string>
+    <string name="how_section">How it works</string>
+    <string name="how_explanation">A transparent layer intercepts gestures in a detected short-video feed. Short taps pass through to the video. The top banner opens recent apps in TikTok so you can choose the sending app; in other apps it goes Back.</string>
+    <string name="privacy_explanation">The service reads the visible interface only on your device. It does not save your viewing history or video content, and it does not send them anywhere.</string>
+    <string name="access_enabled">Access is on. Open a short video in a selected app.</string>
+    <string name="access_required">Android accessibility access is required.</string>
+    <string name="enable_in_settings">Enable in Android settings</string>
+    <string name="disclosure_title">Screen access</string>
+    <string name="disclosure_message">NeverScroll uses an accessibility service to detect short-video screens in YouTube, YouTube ReVanced, Instagram, and TikTok. On those screens it reads interface labels and intercepts touches to stop swipes. Short taps are passed to the original app. Data stays on your device: it is not saved or sent anywhere. In TikTok the top banner opens recent apps because Back can change the video. If you enable compatibility mode, swipes are blocked on every screen of the selected app. You can turn off the service in Android settings at any time.</string>
+    <string name="cancel">Cancel</string>
+    <string name="disclosure_continue">OK, open settings</string>
+
+    <string name="guard_title">Feed stopped</string>
+    <string name="guard_subtitle">%1$s · %2$s</string>
+    <string name="guard_announcement">The %1$s feed is protected. Swipes are blocked. Tap above: %2$s.</string>
+    <string name="exit_back">Back</string>
+    <string name="exit_recents">Recent apps</string>
+</resources>
