@@ -4,6 +4,7 @@ import android.accessibilityservice.AccessibilityServiceInfo
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
+import android.content.Context
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -29,6 +30,10 @@ class MainActivity : Activity() {
     private lateinit var status: TextView
     private lateinit var accessButton: Button
 
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLanguage.localizedContext(newBase))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.statusBarColor = canvas
@@ -51,7 +56,33 @@ class MainActivity : Activity() {
         }
         setContentView(scroll)
 
-        content.addView(label(getString(R.string.brand), 12f, accent, true).apply { letterSpacing = 0.18f })
+        val header = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        content.addView(header)
+        header.addView(label(getString(R.string.brand), 12f, accent, true).apply {
+            letterSpacing = 0.18f
+        }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        val currentLanguage = AppLanguage.current(this)
+        header.addView(Button(this).apply {
+            text = if (currentLanguage == "ru") "RU → EN" else "EN → RU"
+            contentDescription = getString(if (currentLanguage == "ru")
+                R.string.switch_to_english else R.string.switch_to_russian)
+            isAllCaps = false
+            textSize = 13f
+            minHeight = dp(48)
+            setTextColor(accent)
+            background = GradientDrawable().apply {
+                setColor(white)
+                cornerRadius = dp(14).toFloat()
+                setStroke(dp(1), Color.rgb(229, 231, 223))
+            }
+            setOnClickListener {
+                AppLanguage.set(this@MainActivity, if (currentLanguage == "ru") "en" else "ru")
+                if (Build.VERSION.SDK_INT < 33) recreate()
+            }
+        })
         content.addView(label(getString(R.string.hero_title), 30f, ink, true).apply {
             setPadding(0, dp(12), 0, dp(10))
         })

@@ -1,6 +1,16 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+}
+
+val releaseSigningFile = file(
+    providers.gradleProperty("neverscrollSigningFile").orNull
+        ?: "${System.getProperty("user.home")}/.config/neverscroll/release.properties"
+)
+val releaseSigning = Properties().apply {
+    if (releaseSigningFile.isFile) releaseSigningFile.inputStream().use(::load)
 }
 
 android {
@@ -11,8 +21,8 @@ android {
         applicationId = "org.neverscroll.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "0.2.0"
+        versionCode = 3
+        versionName = "0.2.1"
         testInstrumentationRunner = "android.test.InstrumentationTestRunner"
     }
 
@@ -21,6 +31,22 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
+
+    signingConfigs {
+        if (releaseSigningFile.isFile) {
+            create("release") {
+                storeFile = file(releaseSigning.getProperty("storeFile"))
+                storePassword = releaseSigning.getProperty("storePassword")
+                keyAlias = releaseSigning.getProperty("keyAlias")
+                keyPassword = releaseSigning.getProperty("keyPassword")
+            }
+        }
+    }
+    buildTypes {
+        getByName("release") {
+            if (releaseSigningFile.isFile) signingConfig = signingConfigs.getByName("release")
+        }
+    }
 }
 
 dependencies {

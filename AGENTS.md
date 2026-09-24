@@ -16,6 +16,6 @@ An optional compatibility switch per app intentionally protects every screen in 
 
 ## Verification
 
-Run `./gradlew testDebugUnitTest assembleDebug`. For changes to detection or gestures, also test on a physical device with current YouTube, YouTube ReVanced, Instagram, and TikTok versions where installed. For TikTok, verify that the exit chip opens Recents and reopening TikTok leaves the same video; its system Back may navigate between videos. Record unsupported UI versions and observed false positives in `README.md`; automated tests cannot certify third-party accessibility trees.
+Run `./gradlew testDebugUnitTest assembleDebug`. For language changes, verify the top-right switch changes the home screen and feed overlay in both directions. For changes to detection or gestures, also test on a physical device with current YouTube, YouTube ReVanced, Instagram, and TikTok versions where installed. For TikTok, verify that the exit chip opens Recents and reopening TikTok leaves the same video; its system Back may navigate between videos. Record unsupported UI versions and observed false positives in `README.md`; automated tests cannot certify third-party accessibility trees.
 
 The user's latest requirement (block the next scroll immediately) takes precedence over the older chat's idea of counting several videos before a break.

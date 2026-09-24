@@ -2,8 +2,6 @@ package org.neverscroll.app
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
-import android.app.LocaleManager
-import android.content.Context
 import android.content.SharedPreferences
 import android.content.res.Configuration
 import android.graphics.Path
@@ -75,7 +73,7 @@ class ScrollGuardService : AccessibilityService(), SharedPreferences.OnSharedPre
         }
         if (overlay != null && activeApp == app) return
         removeOverlay()
-        val uiContext = localizedUiContext()
+        val uiContext = AppLanguage.localizedContext(this)
         val view = GuardOverlayView(uiContext, app.label,
             exitLabel = uiContext.getString(
                 if (app == ProtectedApp.TIKTOK) R.string.exit_recents else R.string.exit_back),
@@ -124,15 +122,6 @@ class ScrollGuardService : AccessibilityService(), SharedPreferences.OnSharedPre
     private fun legacyBarHeight(name: String): Int {
         val id = resources.getIdentifier(name, "dimen", "android")
         return if (id != 0) resources.getDimensionPixelSize(id) else 0
-    }
-
-    private fun localizedUiContext(): Context {
-        if (Build.VERSION.SDK_INT < 33) return this
-        val locales = getSystemService(LocaleManager::class.java).applicationLocales
-        if (locales.isEmpty) return this
-        return createConfigurationContext(Configuration(resources.configuration).apply {
-            setLocales(locales)
-        })
     }
 
     private fun exitFeed(app: ProtectedApp) {
@@ -232,6 +221,7 @@ class ScrollGuardService : AccessibilityService(), SharedPreferences.OnSharedPre
     }
 
     override fun onSharedPreferenceChanged(preferences: SharedPreferences?, key: String?) {
+        if (AppLanguage.isLanguagePreference(key)) removeOverlay()
         evaluateCurrentWindow()
     }
 

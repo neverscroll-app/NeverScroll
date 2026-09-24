@@ -1,6 +1,8 @@
 <resources>
     <string name="app_name" translatable="false">NeverScroll</string>
     <string name="brand" translatable="false">NEVERSCROLL</string>
+    <string name="switch_to_english">Switch to English</string>
+    <string name="switch_to_russian">Switch to Russian</string>
     <string name="service_label">NeverScroll — Feed protection</string>
     <string name="accessibility_description">Stops swipes in YouTube Shorts, YouTube ReVanced, Instagram Reels, and TikTok. Reads the visible interface of these apps only on your device and places a transparent layer over short-video feeds to block swipes. You can optionally protect every screen in a selected app.</string>
 
