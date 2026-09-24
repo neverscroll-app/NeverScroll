@@ -66,12 +66,12 @@ class MainActivity : Activity() {
         }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         val currentLanguage = AppLanguage.current(this)
         header.addView(Button(this).apply {
-            text = if (currentLanguage == "ru") "RU → EN" else "EN → RU"
+            text = if (currentLanguage == "ru") "EN" else "RU"
             contentDescription = getString(if (currentLanguage == "ru")
                 R.string.switch_to_english else R.string.switch_to_russian)
             isAllCaps = false
             textSize = 13f
-            minHeight = dp(48)
+            setPadding(dp(14), 0, dp(14), 0)
             setTextColor(accent)
             background = GradientDrawable().apply {
                 setColor(white)
@@ -82,7 +82,7 @@ class MainActivity : Activity() {
                 AppLanguage.set(this@MainActivity, if (currentLanguage == "ru") "en" else "ru")
                 if (Build.VERSION.SDK_INT < 33) recreate()
             }
-        })
+        }, LinearLayout.LayoutParams(dp(56), dp(48)))
         content.addView(label(getString(R.string.settings_title), 30f, ink, true).apply {
             setPadding(0, dp(12), 0, dp(24))
         })
