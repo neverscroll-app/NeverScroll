@@ -1,5 +1,7 @@
 # NeverScroll
 
+[Website](https://neverscroll-app.github.io/NeverScroll/) · [Русская версия](https://neverscroll-app.github.io/NeverScroll/ru/)
+
 NeverScroll is an Android app for a familiar situation: someone sends you a short video, you watch it, and you want to return to the messenger before an instinctive swipe pulls you into the feed. On a recognized YouTube Shorts (including YouTube ReVanced), Instagram Reels, or TikTok screen, it blocks drags **from the first video**. A banner at the top provides an exit action. Short taps are passed to the original app where possible, so you can pause the video or open comments.
 
 ## Install
