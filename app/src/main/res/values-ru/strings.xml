@@ -4,8 +4,7 @@
     <string name="service_label">NeverScroll — защита от ленты</string>
     <string name="accessibility_description">Останавливает свайпы в лентах коротких видео YouTube Shorts, YouTube ReVanced, Instagram Reels и TikTok. Читает элементы открытого экрана этих приложений только на устройстве и накладывает прозрачную область для блокировки свайпов. По выбору пользователя может защищать всё приложение.</string>
 
-    <string name="hero_title">Посмотри ролик.\nИ вернись к жизни.</string>
-    <string name="hero_description">Открой присланный Shorts, Reel или TikTok. Когда захочется листать дальше, свайп остановится.</string>
+    <string name="settings_title">Настройки</string>
     <string name="protection_section">Защита</string>
     <string name="access_checking">Проверяем доступ…</string>
     <string name="access_settings">Настройки доступа Android</string>

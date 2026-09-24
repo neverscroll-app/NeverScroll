@@ -83,13 +83,9 @@ class MainActivity : Activity() {
                 if (Build.VERSION.SDK_INT < 33) recreate()
             }
         })
-        content.addView(label(getString(R.string.hero_title), 30f, ink, true).apply {
-            setPadding(0, dp(12), 0, dp(10))
+        content.addView(label(getString(R.string.settings_title), 30f, ink, true).apply {
+            setPadding(0, dp(12), 0, dp(24))
         })
-        content.addView(label(
-            getString(R.string.hero_description),
-            16f, muted, false,
-        ).apply { setPadding(0, 0, 0, dp(24)) })
 
         val setup = card()
         content.addView(setup)

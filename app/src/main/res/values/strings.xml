@@ -6,8 +6,7 @@
     <string name="service_label">NeverScroll — Feed protection</string>
     <string name="accessibility_description">Stops swipes in YouTube Shorts, YouTube ReVanced, Instagram Reels, and TikTok. Reads the visible interface of these apps only on your device and places a transparent layer over short-video feeds to block swipes. You can optionally protect every screen in a selected app.</string>
 
-    <string name="hero_title">Watch one video.\nThen get on with your day.</string>
-    <string name="hero_description">Open a Short, Reel, or TikTok someone sent you. When you try to scroll to the next video, NeverScroll stops the swipe.</string>
+    <string name="settings_title">Settings</string>
     <string name="protection_section">Protection</string>
     <string name="access_checking">Checking access…</string>
     <string name="access_settings">Android accessibility settings</string>
