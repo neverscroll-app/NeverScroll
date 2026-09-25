@@ -11,10 +11,12 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
+import android.view.KeyEvent
 import android.view.WindowManager
 import android.view.WindowInsets
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import android.view.accessibility.AccessibilityWindowInfo
 import java.util.ArrayDeque
 
 class ScrollGuardService : AccessibilityService(), SharedPreferences.OnSharedPreferenceChangeListener {
@@ -57,7 +59,7 @@ class ScrollGuardService : AccessibilityService(), SharedPreferences.OnSharedPre
             removeOverlay()
             return
         }
-        val root = rootInActiveWindow ?: run {
+        val root = currentRoot() ?: run {
             if (!deferRemoval(confirmMissing)) removeOverlay()
             return
         }
@@ -77,6 +79,7 @@ class ScrollGuardService : AccessibilityService(), SharedPreferences.OnSharedPre
         val view = GuardOverlayView(uiContext, app.label,
             exitLabel = uiContext.getString(
                 if (app == ProtectedApp.TIKTOK) R.string.exit_recents else R.string.exit_back),
+            interceptBack = app == ProtectedApp.TIKTOK,
             onExit = { exitFeed(app) },
             onTap = ::forwardTap)
         val (displayHeight, topInset, bottomInset) = if (Build.VERSION.SDK_INT >= 30) {
@@ -93,7 +96,7 @@ class ScrollGuardService : AccessibilityService(), SharedPreferences.OnSharedPre
             WindowManager.LayoutParams.MATCH_PARENT,
             overlayHeight,
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            if (app == ProtectedApp.TIKTOK) 0 else WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
             android.graphics.PixelFormat.TRANSLUCENT,
         )
         params.gravity = Gravity.TOP
@@ -105,6 +108,26 @@ class ScrollGuardService : AccessibilityService(), SharedPreferences.OnSharedPre
         } catch (_: WindowManager.BadTokenException) {
             activeApp = null
         }
+    }
+
+    private fun currentRoot(): AccessibilityNodeInfo? {
+        val root = rootInActiveWindow
+        if (root?.packageName?.toString() != packageName ||
+            activeApp != ProtectedApp.TIKTOK || overlay?.hasWindowFocus() != true) return root
+        // The focusable TikTok guard can become the active accessibility window.
+        // Inspect the still-visible app below it, never the guard's own tree.
+        return windows.asSequence()
+            .filter { it.type == AccessibilityWindowInfo.TYPE_APPLICATION }
+            .mapNotNull { it.root }
+            .firstOrNull { ProtectedApp.fromPackage(it.packageName?.toString().orEmpty()) ==
+                ProtectedApp.TIKTOK } ?: root
+    }
+
+    override fun onKeyEvent(event: KeyEvent): Boolean {
+        if (event.keyCode != KeyEvent.KEYCODE_BACK ||
+            activeApp != ProtectedApp.TIKTOK || overlay?.hasWindowFocus() != true) return false
+        if (event.action == KeyEvent.ACTION_UP && !event.isCanceled) exitFeed(ProtectedApp.TIKTOK)
+        return true
     }
 
     private fun deferRemoval(confirmMissing: Boolean): Boolean {
@@ -141,7 +164,7 @@ class ScrollGuardService : AccessibilityService(), SharedPreferences.OnSharedPre
             // A direct ReVanced link returns to its home screen on the first Back.
             // Leave that screen too, so the user returns to the sending app.
             if (app == ProtectedApp.YOUTUBE_REVANCED &&
-                ProtectedApp.fromPackage(rootInActiveWindow?.packageName?.toString().orEmpty()) == app) {
+                ProtectedApp.fromPackage(currentRoot()?.packageName?.toString().orEmpty()) == app) {
                 performGlobalAction(GLOBAL_ACTION_BACK)
             }
             exitInProgress = false
@@ -151,7 +174,7 @@ class ScrollGuardService : AccessibilityService(), SharedPreferences.OnSharedPre
     private fun forwardTap(screenX: Float, screenY: Float) {
         // Accessibility clicks keep the guard in place. Synthetic taps are only
         // needed for video surfaces and controls without an exposed click action.
-        val root = rootInActiveWindow
+        val root = currentRoot()
         if (root != null) {
             val pending = ArrayDeque<AccessibilityNodeInfo>()
             val bounds = Rect()

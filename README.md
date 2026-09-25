@@ -20,7 +20,7 @@ The interface is available in English and Russian. Tap the language switch in th
 
 1. The accessibility service inspects the visible screen only in supported apps.
 2. The detector looks for short-video viewer IDs and the names and positions of video controls. On a recognized screen, a transparent overlay consumes drag gestures.
-3. For a short tap, the service first tries the target button's accessibility click action. Otherwise, it briefly removes the overlay and replays the tap with Android's Gesture API. In TikTok, the top banner opens Recent apps so you can choose the messenger. In other apps it performs system Back; in ReVanced it repeats Back if the first step remains inside ReVanced. The overlay disappears when you leave the feed.
+3. For a short tap, the service first tries the target button's accessibility click action. Otherwise, it briefly removes the overlay and replays the tap with Android's Gesture API. While TikTok protection is visible, the Back button, Back gesture, and top banner open Recent apps so you can choose the messenger without changing videos. In other apps the banner performs system Back; in ReVanced it repeats Back if the first step remains inside ReVanced. The overlay disappears when you leave the feed. With TikTok compatibility mode enabled, this Back behavior applies on every TikTok screen.
 
 NeverScroll does not take screenshots, store interface labels, keep viewing history, use analytics, or send data anywhere. Settings are stored locally.
 
@@ -29,8 +29,8 @@ NeverScroll does not take screenshots, store interface labels, keep viewing hist
 - Detection depends on the accessibility trees exposed by YouTube, YouTube ReVanced, Instagram, and TikTok. App updates, localization, and incomplete trees can cause missed feeds or false positives. The supported ReVanced package is `app.revanced.android.youtube`; other package names need another rule. Check the behavior on your device before relying on it.
 - Compatibility mode helps when a directly opened video is missed, but deliberately blocks scrolling throughout the selected app. You can turn it off on the NeverScroll home screen.
 - While the overlay is visible, it blocks every drag. In the tested app versions, it disappears while comments are open and returns after closing them. In other versions it may remain over comments; the exit banner remains available.
-- In the tested TikTok version, system Back could switch to another video. The banner therefore opens Recent apps. If the device does not support Recent apps, it goes to the Android home screen.
-- When a target button has no accessibility click action, the service replays a synthetic tap. The target app may delay or reject it. The overlay is briefly removed for that tap, so an extremely quick gesture could pass through. Hardware buttons, voice commands, and other accessibility services can also change videos independently of NeverScroll.
+- In the tested TikTok version, system Back could switch to another video. While protection is visible, NeverScroll redirects Back to Recent apps. If the device does not support Recent apps, it goes to the Android home screen. System navigation behavior can vary by Android version and device; verify both Back methods on your phone.
+- When a target button has no accessibility click action, the service replays a synthetic tap. The target app may delay or reject it. The overlay is briefly removed for that tap, so an extremely quick gesture could pass through. Voice commands and other accessibility services can also change videos independently of NeverScroll.
 - An ordinary Android app cannot guarantee recognition of every future version of another app's feed. NeverScroll adds friction to an instinctive swipe; it is not an unbreakable device restriction.
 
 ## Development and verification
@@ -47,7 +47,9 @@ For version 0.2.0, the English and Russian home screens and protection banner we
 
 For version 0.2.1, the top-right language switch was checked in both directions on an Android 16 emulator using the signed release APK. The home screen and protection banner changed between English and Russian. A protected YouTube Short stayed on the same video after a vertical swipe. The Android 8–12 in-app language path was not tested on a device in this cycle.
 
-To test manually, open a short-video link from a messenger, swipe vertically, try a short tap, and use the top banner to leave. In TikTok, choose the messenger from Recent apps. Check ordinary scrolling in the messenger and repeat for each enabled app. If a feed is missed, inspect its current accessibility tree and add a narrow detection rule with a fixture test.
+For version 0.2.4, an Android 16 emulator used a small test app with TikTok's package name and matching accessibility labels. With 0.2.3, a Back key and an edge Back gesture each advanced its video counter. With 0.2.4, the Back key, gestures from both edges, and the top banner opened Recent apps. The video counter stayed unchanged after reopening the test app, the overlay returned, and a short button tap passed through. The top-right language switch changed the home screen and overlay from English to Russian and back. A physical phone and current TikTok, YouTube, YouTube ReVanced, and Instagram builds were unavailable in this cycle, so actual third-party accessibility trees and device-specific Back behavior remain unverified. No false positives were observed in the emulator fixture; other UI versions remain untested.
+
+To test manually, open a short-video link from a messenger, swipe vertically, try a short tap, and use the top banner to leave. In TikTok, also try the Back button and Back gestures from both edges; each should open Recent apps, and reopening TikTok should show the same video. Check ordinary scrolling in the messenger and repeat for each enabled app. If a feed is missed, inspect its current accessibility tree and add a narrow detection rule with a fixture test.
 
 ## Publishing
 

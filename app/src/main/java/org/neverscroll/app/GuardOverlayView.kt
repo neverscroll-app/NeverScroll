@@ -2,14 +2,18 @@ package org.neverscroll.app
 
 import android.content.Context
 import android.annotation.SuppressLint
+import android.os.Build
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.view.HapticFeedbackConstants
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
+import android.window.OnBackInvokedCallback
+import android.window.OnBackInvokedDispatcher
 import kotlin.math.abs
 
 /** Consumes drags before they reach the video feed and replays short taps via the service. */
@@ -18,6 +22,7 @@ internal class GuardOverlayView(
     context: Context,
     private val appLabel: String,
     private val exitLabel: String,
+    private val interceptBack: Boolean,
     private val onExit: () -> Unit,
     private val onTap: (Float, Float) -> Unit,
 ) : View(context) {
@@ -30,11 +35,40 @@ internal class GuardOverlayView(
     private var downAt = 0L
     private var dragging = false
     private var blockedRecently = false
+    private var backHandler: BackHandler? = null
 
     init {
         isClickable = true
+        if (interceptBack) {
+            isFocusable = true
+            isFocusableInTouchMode = true
+        }
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
         contentDescription = resources.getString(R.string.guard_announcement, appLabel, exitLabel)
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        if (interceptBack) {
+            requestFocus()
+            if (Build.VERSION.SDK_INT >= 33) {
+                backHandler = BackHandler(this, onExit)
+            }
+        }
+    }
+
+    override fun onDetachedFromWindow() {
+        backHandler?.close()
+        backHandler = null
+        super.onDetachedFromWindow()
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (interceptBack && event.keyCode == KeyEvent.KEYCODE_BACK) {
+            if (event.action == KeyEvent.ACTION_UP && !event.isCanceled) onExit()
+            return true
+        }
+        return super.dispatchKeyEvent(event)
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -99,5 +133,20 @@ internal class GuardOverlayView(
         super.performClick()
         onExit()
         return true
+    }
+
+    @SuppressLint("NewApi") // Instantiated only behind the API 33 check above.
+    private class BackHandler(view: View, onExit: () -> Unit) {
+        private val dispatcher = view.findOnBackInvokedDispatcher()
+        private val callback = OnBackInvokedCallback { onExit() }
+
+        init {
+            dispatcher?.registerOnBackInvokedCallback(
+                OnBackInvokedDispatcher.PRIORITY_OVERLAY, callback)
+        }
+
+        fun close() {
+            dispatcher?.unregisterOnBackInvokedCallback(callback)
+        }
     }
 }

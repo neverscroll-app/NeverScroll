@@ -5,6 +5,7 @@
     android:notificationTimeout="50"
     android:canRetrieveWindowContent="true"
     android:canPerformGestures="true"
-    android:accessibilityFlags="flagReportViewIds"
+    android:canRequestFilterKeyEvents="true"
+    android:accessibilityFlags="flagReportViewIds|flagRetrieveInteractiveWindows|flagRequestFilterKeyEvents"
     android:description="@string/accessibility_description"
     android:settingsActivity="org.neverscroll.app.MainActivity" />
