@@ -25,6 +25,31 @@ class FeedDetectorTest {
             ScreenSignals(emptySet(), setOf("shorts"))))
     }
 
+    @Test fun revancedSubscriptionsShortsFilterAndPostActionsAreNotAShort() {
+        val screen = Bounds(0, 0, 1272, 2772)
+        val actions = FeedDetector.verticalRailActions(screen, listOf(
+            Bounds(12, 2262, 131, 2333) to "Нравится",
+            Bounds(974, 2262, 1141, 2333) to "Поделиться",
+            Bounds(1153, 2262, 1272, 2333) to "Оставить комментарий",
+        ))
+        assertTrue(actions.isEmpty())
+        assertFalse(FeedDetector.isShortFeed(ProtectedApp.YOUTUBE_REVANCED,
+            ScreenSignals(setOf("app.revanced.android.youtube:id/pivot_bar",
+                "app.revanced.android.youtube:id/reel_time_bar"),
+                setOf("shorts", "нравится", "поделиться", "оставить комментарий"),
+                setOf("подписки"), actions)))
+    }
+
+    @Test fun shortsActionsFormAVerticalRail() {
+        val actions = FeedDetector.verticalRailActions(Bounds(0, 0, 1272, 2772), listOf(
+            Bounds(1090, 1530, 1200, 1640) to "Like",
+            Bounds(1090, 1710, 1200, 1820) to "Comments",
+            Bounds(1090, 1890, 1200, 2000) to "Share",
+        ))
+        assertTrue(FeedDetector.isShortFeed(ProtectedApp.YOUTUBE_REVANCED,
+            ScreenSignals(emptySet(), setOf("shorts"), rightRailActions = actions)))
+    }
+
     @Test fun instagramHomePostIsNotReel() {
         assertFalse(FeedDetector.isShortFeed(ProtectedApp.INSTAGRAM,
             ScreenSignals(emptySet(), setOf("reels", "like", "comment"))))

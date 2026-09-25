@@ -4,6 +4,7 @@ import android.graphics.Rect
 import android.view.accessibility.AccessibilityNodeInfo
 import java.util.ArrayDeque
 import java.util.Locale
+import kotlin.math.abs
 
 internal enum class ProtectedApp(val label: String, val preferenceKey: String) {
     YOUTUBE("YouTube Shorts", "youtube_enabled"),
@@ -56,9 +57,6 @@ internal object FeedDetector {
             ProtectedApp.YOUTUBE, ProtectedApp.YOUTUBE_REVANCED ->
                 signals.idContains("reel_watch") ||
                     signals.idContains("shorts_player") ||
-                    (signals.labelContains("shorts") &&
-                        hasEngagement &&
-                        (signals.idContains("reel") || signals.idContains("shorts"))) ||
                     (signals.labelContains("shorts") && signals.rightRailActions.size >= 2)
 
             ProtectedApp.INSTAGRAM ->
@@ -91,11 +89,34 @@ internal object FeedDetector {
         }
     }
 
+    /** At least two different actions must line up vertically, not in a post's action row. */
+    fun verticalRailActions(screen: Bounds, controls: List<Pair<Bounds, String>>): Set<VideoAction> {
+        val candidates = controls.mapNotNull { (bounds, label) ->
+            rightRailAction(screen, bounds, label.lowercase(Locale.ROOT))?.let { it to bounds }
+        }
+        val actions = mutableSetOf<VideoAction>()
+        for (i in candidates.indices) {
+            for (j in i + 1 until candidates.size) {
+                val (firstAction, firstBounds) = candidates[i]
+                val (secondAction, secondBounds) = candidates[j]
+                val dx = abs(firstBounds.centerX - secondBounds.centerX)
+                val dy = abs(firstBounds.centerY - secondBounds.centerY)
+                if (firstAction != secondAction && dx <= screen.width * 0.12 &&
+                    dy > maxOf(dx, firstBounds.height, secondBounds.height) &&
+                    dy <= screen.height * 0.35) {
+                    actions.add(firstAction)
+                    actions.add(secondAction)
+                }
+            }
+        }
+        return actions
+    }
+
     fun collect(root: AccessibilityNodeInfo): ScreenSignals {
         val ids = mutableSetOf<String>()
         val labels = mutableSetOf<String>()
         val selectedLabels = mutableSetOf<String>()
-        val rightRailActions = mutableSetOf<VideoAction>()
+        val actionControls = mutableListOf<Pair<Bounds, String>>()
         val rootRect = Rect().also(root::getBoundsInScreen)
         val screen = Bounds.from(rootRect)
         val nodeRect = Rect()
@@ -112,8 +133,7 @@ internal object FeedDetector {
             if (text.isNotEmpty()) labels.add(text)
             if (description.isNotEmpty()) labels.add(description)
             node.getBoundsInScreen(nodeRect)
-            rightRailAction(screen, Bounds.from(nodeRect), "$id $text $description")
-                ?.let(rightRailActions::add)
+            actionControls.add(Bounds.from(nodeRect) to "$id $text $description")
             if (node.isSelected) {
                 if (text.isNotEmpty()) selectedLabels.add(text)
                 if (description.isNotEmpty()) selectedLabels.add(description)
@@ -122,6 +142,7 @@ internal object FeedDetector {
                 node.getChild(i)?.let(pending::add)
             }
         }
-        return ScreenSignals(ids, labels, selectedLabels, rightRailActions)
+        return ScreenSignals(ids, labels, selectedLabels,
+            verticalRailActions(screen, actionControls))
     }
 }
