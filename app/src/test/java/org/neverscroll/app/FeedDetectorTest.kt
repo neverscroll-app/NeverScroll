@@ -40,6 +40,18 @@ class FeedDetectorTest {
                 setOf("подписки"), actions)))
     }
 
+    @Test fun revancedSubscriptionsShortStaysProtectedWhenPlaybackHidesShortsTitle() {
+        val rail = setOf(VideoAction.LIKE, VideoAction.COMMENT, VideoAction.SHARE)
+        val playerIds = setOf("app.revanced.android.youtube:id/reel_player_page_container")
+        assertTrue(FeedDetector.isShortFeed(ProtectedApp.YOUTUBE_REVANCED,
+            ScreenSignals(playerIds, emptySet(), rightRailActions = rail)))
+        assertFalse(FeedDetector.isShortFeed(ProtectedApp.YOUTUBE_REVANCED,
+            ScreenSignals(setOf("app.revanced.android.youtube:id/reel_time_bar"),
+                emptySet(), rightRailActions = rail)))
+        assertFalse(FeedDetector.isShortFeed(ProtectedApp.YOUTUBE_REVANCED,
+            ScreenSignals(playerIds, emptySet())))
+    }
+
     @Test fun shortsActionsFormAVerticalRail() {
         val actions = FeedDetector.verticalRailActions(Bounds(0, 0, 1272, 2772), listOf(
             Bounds(1090, 1530, 1200, 1640) to "Like",

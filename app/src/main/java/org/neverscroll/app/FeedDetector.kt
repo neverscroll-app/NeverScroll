@@ -57,7 +57,9 @@ internal object FeedDetector {
             ProtectedApp.YOUTUBE, ProtectedApp.YOUTUBE_REVANCED ->
                 signals.idContains("reel_watch") ||
                     signals.idContains("shorts_player") ||
-                    (signals.labelContains("shorts") && signals.rightRailActions.size >= 2)
+                    (signals.rightRailActions.size >= 2 &&
+                        (signals.labelContains("shorts") ||
+                            signals.idContains("reel_player_page_container")))
 
             ProtectedApp.INSTAGRAM ->
                 signals.idContains("reel_viewer") ||
