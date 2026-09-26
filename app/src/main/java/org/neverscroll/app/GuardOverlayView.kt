@@ -25,7 +25,7 @@ internal class GuardOverlayView(
     private val interceptBack: Boolean,
     private val onExit: () -> Unit,
     private val onTap: (Float, Float) -> Unit,
-    private val onSeek: (Float, Float, Float, Float, Long) -> Unit,
+    private val onSeek: (Float, Float, Float, Float) -> Unit,
 ) : View(context) {
     private val density = resources.displayMetrics.density
     private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
@@ -126,8 +126,7 @@ internal class GuardOverlayView(
                 if (wasDragging) {
                     if (SeekTargetDetector.allowsHorizontalSwipe(seekBounds,
                             downRawX, downRawY, event.rawX, event.rawY, touchSlop)) {
-                        onSeek(downRawX, downRawY, event.rawX, event.rawY,
-                            (event.eventTime - downAt).coerceAtLeast(1))
+                        onSeek(downRawX, downRawY, event.rawX, event.rawY)
                     }
                     postDelayed({ blockedRecently = false; invalidate() }, 350)
                 } else if (event.eventTime - downAt < 700) {

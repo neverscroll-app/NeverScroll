@@ -12,6 +12,7 @@ import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
 import android.view.KeyEvent
+import android.view.View
 import android.view.WindowManager
 import android.view.WindowInsets
 import android.view.accessibility.AccessibilityEvent
@@ -23,6 +24,7 @@ class ScrollGuardService : AccessibilityService(), SharedPreferences.OnSharedPre
     private val handler = Handler(Looper.getMainLooper())
     private val windowManager by lazy { getSystemService(WINDOW_SERVICE) as WindowManager }
     private var overlay: GuardOverlayView? = null
+    private var seekBottomShield: View? = null
     private var replayingGesture = false
     private var evaluationQueued = false
     private var missingCheckQueued = false
@@ -55,7 +57,8 @@ class ScrollGuardService : AccessibilityService(), SharedPreferences.OnSharedPre
     }
 
     private fun evaluateCurrentWindow(confirmMissing: Boolean = false) {
-        if (replayingGesture || !GuardSettings.enabled(this)) {
+        if (replayingGesture) return
+        if (!GuardSettings.enabled(this)) {
             removeOverlay()
             return
         }
@@ -216,9 +219,97 @@ class ScrollGuardService : AccessibilityService(), SharedPreferences.OnSharedPre
         replayGesture(screenX, screenY, screenX, screenY, 50)
     }
 
-    private fun replaySeek(startX: Float, startY: Float, endX: Float, endY: Float,
-                           durationMs: Long) {
-        replayGesture(startX, startY, endX, endY, durationMs.coerceIn(100, 800))
+    private fun replaySeek(startX: Float, startY: Float, endX: Float, endY: Float) {
+        if (replayingGesture) return
+        val view = overlay ?: return
+        val bounds = view.seekBounds ?: return
+        val params = view.layoutParams as? WindowManager.LayoutParams ?: return
+        val fullHeight = params.height
+        val bottom = params.y + fullHeight
+        val guardedHeight = (bounds.top - params.y).coerceIn(1, fullHeight)
+        if (guardedHeight == fullHeight) return
+
+        // Keep the visible guard and exit chip over the feed. Only the seek
+        // control is exposed to the injected gesture, never the video above it.
+        val shieldHeight = (bottom - bounds.bottom).coerceAtLeast(0)
+        if (shieldHeight > 0) {
+            val shield = View(this).apply {
+                isClickable = true
+                setOnTouchListener { _, _ -> true }
+            }
+            val shieldParams = WindowManager.LayoutParams(
+                WindowManager.LayoutParams.MATCH_PARENT,
+                shieldHeight,
+                WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                android.graphics.PixelFormat.TRANSLUCENT,
+            ).apply {
+                gravity = Gravity.TOP
+                y = bounds.bottom
+            }
+            try {
+                windowManager.addView(shield, shieldParams)
+                seekBottomShield = shield
+            } catch (_: WindowManager.BadTokenException) {
+                return
+            }
+        }
+        try {
+            params.height = guardedHeight
+            windowManager.updateViewLayout(view, params)
+        } catch (_: IllegalArgumentException) {
+            params.height = fullHeight
+            removeSeekBottomShield()
+            return
+        }
+        replayingGesture = true
+        handler.postDelayed({
+            val path = Path().apply {
+                moveTo(startX, startY)
+                lineTo(endX, endY)
+            }
+            val gesture = GestureDescription.Builder()
+                .addStroke(GestureDescription.StrokeDescription(path, 0, 60))
+                .build()
+            val accepted = dispatchGesture(gesture,
+                object : GestureResultCallback() {
+                    override fun onCompleted(gestureDescription: GestureDescription?) =
+                        finishSeekReplay(view, fullHeight)
+                    override fun onCancelled(gestureDescription: GestureDescription?) =
+                        finishSeekReplay(view, fullHeight)
+                }, handler)
+            if (!accepted) finishSeekReplay(view, fullHeight)
+        }, 16)
+    }
+
+    private fun finishSeekReplay(view: GuardOverlayView, fullHeight: Int) {
+        handler.postDelayed({
+            if (overlay === view) {
+                val params = view.layoutParams as? WindowManager.LayoutParams
+                if (params != null) {
+                    params.height = fullHeight
+                    try {
+                        windowManager.updateViewLayout(view, params)
+                    } catch (_: IllegalArgumentException) {
+                        // The display or activity may have changed during replay.
+                    }
+                }
+            }
+            removeSeekBottomShield()
+            replayingGesture = false
+            evaluateCurrentWindow()
+        }, 16)
+    }
+
+    private fun removeSeekBottomShield() {
+        seekBottomShield?.let {
+            try {
+                windowManager.removeViewImmediate(it)
+            } catch (_: IllegalArgumentException) {
+                // The window may have been removed during a display change.
+            }
+        }
+        seekBottomShield = null
     }
 
     private fun replayGesture(startX: Float, startY: Float, endX: Float, endY: Float,
@@ -251,6 +342,7 @@ class ScrollGuardService : AccessibilityService(), SharedPreferences.OnSharedPre
     }
 
     private fun removeOverlay() {
+        removeSeekBottomShield()
         overlay?.let {
             try {
                 windowManager.removeViewImmediate(it)
