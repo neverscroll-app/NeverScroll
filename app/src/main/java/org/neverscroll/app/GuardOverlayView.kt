@@ -25,6 +25,7 @@ internal class GuardOverlayView(
     private val interceptBack: Boolean,
     private val onExit: () -> Unit,
     private val onTap: (Float, Float) -> Unit,
+    private val onSeek: (Float, Float, Float, Float, Long) -> Unit,
 ) : View(context) {
     private val density = resources.displayMetrics.density
     private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
@@ -32,10 +33,13 @@ internal class GuardOverlayView(
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private var downX = 0f
     private var downY = 0f
+    private var downRawX = 0f
+    private var downRawY = 0f
     private var downAt = 0L
     private var dragging = false
     private var blockedRecently = false
     private var backHandler: BackHandler? = null
+    var seekBounds: Bounds? = null
 
     init {
         isClickable = true
@@ -95,6 +99,8 @@ internal class GuardOverlayView(
             MotionEvent.ACTION_DOWN -> {
                 downX = event.x
                 downY = event.y
+                downRawX = event.rawX
+                downRawY = event.rawY
                 downAt = event.eventTime
                 dragging = false
                 return true
@@ -103,6 +109,10 @@ internal class GuardOverlayView(
                 if (!dragging && (abs(event.x - downX) > touchSlop ||
                             abs(event.y - downY) > touchSlop)) {
                     dragging = true
+                }
+                if (dragging && !blockedRecently &&
+                    !SeekTargetDetector.allowsHorizontalSwipe(seekBounds,
+                        downRawX, downRawY, event.rawX, event.rawY, touchSlop)) {
                     blockedRecently = true
                     performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
                     invalidate()
@@ -114,6 +124,11 @@ internal class GuardOverlayView(
                     abs(event.y - downY) > touchSlop
                 dragging = false
                 if (wasDragging) {
+                    if (SeekTargetDetector.allowsHorizontalSwipe(seekBounds,
+                            downRawX, downRawY, event.rawX, event.rawY, touchSlop)) {
+                        onSeek(downRawX, downRawY, event.rawX, event.rawY,
+                            (event.eventTime - downAt).coerceAtLeast(1))
+                    }
                     postDelayed({ blockedRecently = false; invalidate() }, 350)
                 } else if (event.eventTime - downAt < 700) {
                     if (chip.contains(event.x, event.y)) performClick()

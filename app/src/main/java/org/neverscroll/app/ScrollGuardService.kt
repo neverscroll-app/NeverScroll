@@ -23,7 +23,7 @@ class ScrollGuardService : AccessibilityService(), SharedPreferences.OnSharedPre
     private val handler = Handler(Looper.getMainLooper())
     private val windowManager by lazy { getSystemService(WINDOW_SERVICE) as WindowManager }
     private var overlay: GuardOverlayView? = null
-    private var replayingTap = false
+    private var replayingGesture = false
     private var evaluationQueued = false
     private var missingCheckQueued = false
     private var exitInProgress = false
@@ -36,7 +36,7 @@ class ScrollGuardService : AccessibilityService(), SharedPreferences.OnSharedPre
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (event == null || replayingTap) return
+        if (event == null || replayingGesture) return
         // System windows can emit events while a video remains active. The active
         // window, rather than the event source package, decides overlay lifetime.
         if (event.packageName?.toString() == packageName) return
@@ -55,7 +55,7 @@ class ScrollGuardService : AccessibilityService(), SharedPreferences.OnSharedPre
     }
 
     private fun evaluateCurrentWindow(confirmMissing: Boolean = false) {
-        if (replayingTap || !GuardSettings.enabled(this)) {
+        if (replayingGesture || !GuardSettings.enabled(this)) {
             removeOverlay()
             return
         }
@@ -73,7 +73,11 @@ class ScrollGuardService : AccessibilityService(), SharedPreferences.OnSharedPre
             if (activeApp != app || !deferRemoval(confirmMissing)) removeOverlay()
             return
         }
-        if (overlay != null && activeApp == app) return
+        val seekBounds = SeekTargetDetector.find(root, app)
+        if (overlay != null && activeApp == app) {
+            overlay?.seekBounds = seekBounds
+            return
+        }
         removeOverlay()
         val uiContext = AppLanguage.localizedContext(this)
         val view = GuardOverlayView(uiContext, app.label,
@@ -81,7 +85,9 @@ class ScrollGuardService : AccessibilityService(), SharedPreferences.OnSharedPre
                 if (app == ProtectedApp.TIKTOK) R.string.exit_recents else R.string.exit_back),
             interceptBack = app == ProtectedApp.TIKTOK,
             onExit = { exitFeed(app) },
-            onTap = ::forwardTap)
+            onTap = ::forwardTap,
+            onSeek = ::replaySeek)
+        view.seekBounds = seekBounds
         val (displayHeight, topInset, bottomInset) = if (Build.VERSION.SDK_INT >= 30) {
             val metrics = windowManager.currentWindowMetrics
             val bars = metrics.windowInsets.getInsets(WindowInsets.Type.systemBars())
@@ -207,13 +213,26 @@ class ScrollGuardService : AccessibilityService(), SharedPreferences.OnSharedPre
     }
 
     private fun replayTap(screenX: Float, screenY: Float) {
-        if (replayingTap) return
-        replayingTap = true
+        replayGesture(screenX, screenY, screenX, screenY, 50)
+    }
+
+    private fun replaySeek(startX: Float, startY: Float, endX: Float, endY: Float,
+                           durationMs: Long) {
+        replayGesture(startX, startY, endX, endY, durationMs.coerceIn(100, 800))
+    }
+
+    private fun replayGesture(startX: Float, startY: Float, endX: Float, endY: Float,
+                              durationMs: Long) {
+        if (replayingGesture) return
+        replayingGesture = true
         removeOverlay()
         handler.postDelayed({
-            val path = Path().apply { moveTo(screenX, screenY) }
+            val path = Path().apply {
+                moveTo(startX, startY)
+                if (startX != endX || startY != endY) lineTo(endX, endY)
+            }
             val gesture = GestureDescription.Builder()
-                .addStroke(GestureDescription.StrokeDescription(path, 0, 50))
+                .addStroke(GestureDescription.StrokeDescription(path, 0, durationMs))
                 .build()
             val accepted = dispatchGesture(gesture,
                 object : GestureResultCallback() {
@@ -226,7 +245,7 @@ class ScrollGuardService : AccessibilityService(), SharedPreferences.OnSharedPre
 
     private fun finishReplay() {
         handler.postDelayed({
-            replayingTap = false
+            replayingGesture = false
             evaluateCurrentWindow()
         }, 80)
     }
